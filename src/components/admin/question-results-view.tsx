@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { QuestionResultDistribution } from "@/lib/api-client";
 import { QuestionDistributionBar } from "@/components/admin/question-distribution-bar";
 import { QuestionBarChart } from "@/components/admin/question-bar-chart";
+import { QuestionPieChart } from "@/components/admin/question-pie-chart";
 import { AwarenessLevelBadge } from "@/components/admin/awareness-level-badge";
 import { RiskBadge } from "@/components/admin/risk-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,10 +32,35 @@ const AWARENESS_LABELS: Record<number, string> = {
 const BEHAVIOR_COLORS: Record<string, string> = { yes: "#d03b3b", no: "#0ca30c" };
 const BEHAVIOR_LABELS: Record<string, string> = { yes: "Ya", no: "Tidak" };
 
-type ViewMode = "stacked" | "bar";
+type ViewMode = "stacked" | "bar" | "pie";
+
+// Pilih komponen chart sesuai view mode - dipakai untuk section awareness
+// maupun behavior supaya tidak duplikasi percabangan 3 arah dua kali.
+function DistributionChart<T extends string | number>({
+  view,
+  distribution,
+  colorForValue,
+  labelForValue,
+}: {
+  view: ViewMode;
+  distribution: { value: T; count: number; percentage: number }[];
+  colorForValue: (value: T) => string;
+  labelForValue: (value: T) => string;
+}) {
+  if (view === "bar") {
+    return <QuestionBarChart distribution={distribution} colorForValue={colorForValue} labelForValue={labelForValue} />;
+  }
+  if (view === "pie") {
+    return <QuestionPieChart distribution={distribution} colorForValue={colorForValue} labelForValue={labelForValue} />;
+  }
+  return (
+    <QuestionDistributionBar distribution={distribution} colorForValue={colorForValue} labelForValue={labelForValue} />
+  );
+}
 
 // Toggle "Stacked %" (default, 100%-stacked satu bar) vs "Bar Chart"
-// (satu bar per pilihan jawaban) - berlaku untuk kedua section sekaligus.
+// (satu bar per pilihan jawaban) vs "Pie Chart" - berlaku untuk kedua
+// section sekaligus.
 export function QuestionResultsView({ data }: { data: QuestionResultDistribution }) {
   const [view, setView] = useState<ViewMode>("stacked");
 
@@ -45,6 +71,7 @@ export function QuestionResultsView({ data }: { data: QuestionResultDistribution
           <TabsList>
             <TabsTrigger value="stacked">Stacked %</TabsTrigger>
             <TabsTrigger value="bar">Bar Chart</TabsTrigger>
+            <TabsTrigger value="pie">Pie Chart</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -68,19 +95,12 @@ export function QuestionResultsView({ data }: { data: QuestionResultDistribution
                 )}
               </CardHeader>
               <CardContent>
-                {view === "stacked" ? (
-                  <QuestionDistributionBar
-                    distribution={q.distribution}
-                    colorForValue={(v) => AWARENESS_COLORS[v]}
-                    labelForValue={(v) => AWARENESS_LABELS[v]}
-                  />
-                ) : (
-                  <QuestionBarChart
-                    distribution={q.distribution}
-                    colorForValue={(v) => AWARENESS_COLORS[v]}
-                    labelForValue={(v) => AWARENESS_LABELS[v]}
-                  />
-                )}
+                <DistributionChart
+                  view={view}
+                  distribution={q.distribution}
+                  colorForValue={(v) => AWARENESS_COLORS[v]}
+                  labelForValue={(v) => AWARENESS_LABELS[v]}
+                />
                 {q.totalResponses > 0 && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{q.totalResponses} responden menjawab</p>
                 )}
@@ -109,19 +129,12 @@ export function QuestionResultsView({ data }: { data: QuestionResultDistribution
                 )}
               </CardHeader>
               <CardContent>
-                {view === "stacked" ? (
-                  <QuestionDistributionBar
-                    distribution={q.distribution}
-                    colorForValue={(v) => BEHAVIOR_COLORS[v]}
-                    labelForValue={(v) => BEHAVIOR_LABELS[v]}
-                  />
-                ) : (
-                  <QuestionBarChart
-                    distribution={q.distribution}
-                    colorForValue={(v) => BEHAVIOR_COLORS[v]}
-                    labelForValue={(v) => BEHAVIOR_LABELS[v]}
-                  />
-                )}
+                <DistributionChart
+                  view={view}
+                  distribution={q.distribution}
+                  colorForValue={(v) => BEHAVIOR_COLORS[v]}
+                  labelForValue={(v) => BEHAVIOR_LABELS[v]}
+                />
                 {q.totalResponses > 0 && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{q.totalResponses} responden menjawab</p>
                 )}
