@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BarChart3, ListChecks, Pencil } from "lucide-react";
-import { ApiError, getSurvey, listSurveyRespondents } from "@/lib/api-client";
+import { ApiError, getSurvey, listActiveDepartments, listSurveyRespondents } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { SurveyLinkCard } from "@/components/admin/survey-link-card";
 import { SurveyStatusActions } from "@/components/admin/survey-status-actions";
 import { SurveyAnonymousToggle } from "@/components/admin/survey-anonymous-toggle";
+import { EditTargetDepartmentsDialog } from "@/components/admin/edit-target-departments-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Props = { params: Promise<{ id: string }> };
@@ -24,7 +25,10 @@ export default async function SurveyDetailPage({ params }: Props) {
     throw err;
   }
 
-  const respondentsPage = await listSurveyRespondents(id, { pageSize: 100 });
+  const [respondentsPage, activeDepartments] = await Promise.all([
+    listSurveyRespondents(id, { pageSize: 100 }),
+    listActiveDepartments(),
+  ]);
   const respondents = respondentsPage.items;
   const completed = respondents.filter((r) => r.completed).length;
   const targetDepartments: string[] = survey.targetDepartments ?? [];
@@ -71,14 +75,24 @@ export default async function SurveyDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent className="space-y-3">
           <SurveyStatusActions surveyId={survey.id} status={survey.status} />
-          {targetDepartments.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-2">
+          <div className="flex items-center justify-between gap-2 pt-2">
+            <span className="text-xs font-medium text-muted-foreground">Target Departemen</span>
+            <EditTargetDepartmentsDialog
+              surveyId={survey.id}
+              allDepartments={activeDepartments.map((d) => d.name)}
+              currentTargets={targetDepartments}
+            />
+          </div>
+          {targetDepartments.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
               {targetDepartments.map((d) => (
                 <Badge key={d} variant="outline">
                   {d}
                 </Badge>
               ))}
             </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Belum ada target departemen dipilih.</p>
           )}
         </CardContent>
       </Card>
