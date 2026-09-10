@@ -334,6 +334,7 @@ export type SurveyAnalytics = {
   }[];
   departmentHeatmap: {
     department: string;
+    respondentCount: number;
     avgAwarenessScore: number;
     behaviorRiskPercent: number;
     riskLevel: RiskLevel;

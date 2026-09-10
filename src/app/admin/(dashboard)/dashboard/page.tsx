@@ -8,6 +8,7 @@ import { RiskBadge } from "@/components/admin/risk-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Props = { searchParams: Promise<{ survey?: string }> };
 
@@ -119,6 +120,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
                 >
                   <span className="font-medium">{d.department}</span>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>{d.respondentCount} responden</span>
                     <span>Awareness {d.avgAwarenessScore}/5</span>
                     <span>Risk {d.behaviorRiskPercent}%</span>
                     <RiskBadge level={d.riskLevel} />
@@ -128,6 +130,47 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Rekap Respondent per Departemen</CardTitle>
+          <CardDescription>Total responden yang menyelesaikan survey ini, per departemen.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Departemen</TableHead>
+                <TableHead className="text-right">Total Respondent</TableHead>
+                <TableHead className="text-right">% dari Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...departmentHeatmap]
+                .sort((a, b) => b.respondentCount - a.respondentCount)
+                .map((d) => (
+                  <TableRow key={d.department}>
+                    <TableCell className="font-medium">{d.department}</TableCell>
+                    <TableCell className="text-right">{d.respondentCount}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {summary.completedRespondents > 0
+                        ? ((d.respondentCount / summary.completedRespondents) * 100).toFixed(1)
+                        : "0.0"}
+                      %
+                    </TableCell>
+                  </TableRow>
+                ))}
+              {departmentHeatmap.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-10">
+                    Belum ada data.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
